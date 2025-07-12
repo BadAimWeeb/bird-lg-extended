@@ -40,3 +40,17 @@ a {
     color-scheme: dark;
   }
 }
+
+.collapsible-wrapper {
+  display: grid;
+  grid-template-rows: min-content 0fr;
+  transition: grid-template-rows 500ms;
+}
+
+.collapsible {
+  overflow: hidden;
+}
+
+.collapsible-wrapper.not-collapsed {
+  grid-template-rows: min-content 1fr;
+}
