@@ -1,6 +1,7 @@
 const SERVERS_RAW = process.env.SERVERS || "";
 /* Address: Label */
 const SERVERS: Record<string, string> = {};
+const SERVERS_REVERSE: Record<string, string> = {};
 
 // Read from left to right, mind the ' and " characters to allow spaces and , in labels
 if (SERVERS_RAW) {
@@ -80,7 +81,9 @@ if (SERVERS_RAW) {
         const [addressWithoutProtocol, port] = address.split(':');
 
         // Add to SERVERS object
-        SERVERS[addressWithoutProtocol + (process.env.DEFAULT_BIRD_LG_DOMAIN ? ("." + process.env.DEFAULT_BIRD_LG_DOMAIN || "") : "") + ":" + (port || process.env.DEFAULT_PROXY_PORT || "8000")] = label;
+        const kAddress = addressWithoutProtocol + (process.env.DEFAULT_BIRD_LG_DOMAIN ? ("." + process.env.DEFAULT_BIRD_LG_DOMAIN || "") : "") + ":" + (port || process.env.DEFAULT_PROXY_PORT || "8000");
+        SERVERS[kAddress] = label;
+        SERVERS_REVERSE[label] = kAddress;
 
         // Skip comma if present
         if (pos < SERVERS_RAW.length && SERVERS_RAW[pos] === ',') {
@@ -90,3 +93,4 @@ if (SERVERS_RAW) {
 }
 
 export default SERVERS;
+export { SERVERS_REVERSE };

@@ -4,6 +4,7 @@ import { ThemeProvider, createTheme } from '@mui/material/styles';
 import { Roboto, Roboto_Mono } from "next/font/google";
 import { useState } from "react";
 import { AppBar, Box, Button, IconButton, Toolbar, Typography } from "@mui/material";
+import Link from 'next/link';
 
 const roboto = Roboto({
     variable: "--font-roboto",
@@ -35,9 +36,11 @@ export default function RootLayout({
                     <Box>
                         <AppBar position="static">
                             <Toolbar>
-                                <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
-                                    {process.env.NEXT_PUBLIC_NAVBAR_BRAND || "bird-lg Extended"}
-                                </Typography>
+                                <Link href="/summary">
+                                    <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
+                                        {process.env.NEXT_PUBLIC_NAVBAR_BRAND || "bird-lg Extended"}
+                                    </Typography>
+                                </Link>
                             </Toolbar>
                         </AppBar>
 
