@@ -2,6 +2,7 @@
 
 import { Box, LinearProgress, Tooltip, Typography } from "@mui/material";
 import { useEffect, useRef, useState } from "react";
+import { SmartRender } from "./SmartRender";
 
 export function CommandStream({ cmd, servers }: { cmd: string, servers: string[] }) {
     const responses = useRef<Record<string, [number, string]>>({});
@@ -60,7 +61,7 @@ export function CommandStream({ cmd, servers }: { cmd: string, servers: string[]
                             </Typography>
                         </Tooltip>
                     </Box>
-                    <code style={{ fontSize: 14, lineHeight: 1.5, whiteSpace: "pre-wrap" }}>{data}</code>
+                    <code style={{ fontSize: 14, lineHeight: 1.5, whiteSpace: "pre-wrap" }}>{isLoading ? data : <SmartRender birdOutput={data} />}</code>
                 </Box>
             ))}
         </>

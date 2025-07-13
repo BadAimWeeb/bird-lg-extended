@@ -75,6 +75,8 @@ export async function GET(request: NextRequest) {
                     function generateTimeout() {
                         return setTimeout(() => {
                             emitData(JSON.stringify([server, '\nError retrieving data: Stream read timeout']));
+                            cached!.liveFeed!.removeAllListeners();
+                            cache.delete(`${server}!@!${cmd}`);
                             resolve();
                         }, 15000);
                     }
