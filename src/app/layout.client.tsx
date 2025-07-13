@@ -2,12 +2,13 @@
 
 import { ThemeProvider, createTheme } from '@mui/material/styles';
 import { Roboto, Roboto_Mono } from "next/font/google";
-import { useCallback, useEffect, useState } from "react";
-import { AppBar, Box, Button, Divider, FormControl, InputLabel, MenuItem, OutlinedInput, Select, type SelectChangeEvent, TextField, Toolbar, Typography } from "@mui/material";
+import { Suspense, useCallback, useEffect, useState } from "react";
+import { AppBar, Box, Button, Container, Divider, FormControl, InputLabel, LinearProgress, MenuItem, OutlinedInput, Select, type SelectChangeEvent, TextField, Toolbar, Typography } from "@mui/material";
 import Link from 'next/link';
 import { getServersClientView } from '@/utils_server/servers_client_view';
 import { usePathname, useRouter } from 'next/navigation';
 import StartIcon from "@mui/icons-material/Start"
+import { decode } from 'punycode';
 
 const roboto = Roboto({
     variable: "--font-roboto",
@@ -38,7 +39,8 @@ const ROUTES = {
     "route_where": "show route where net ~ [ ... ]",
     "route_where_all": "show route where net ~ [ ... ] all",
     "route_generic": "show route ...",
-    "generic": "show ..."
+    "generic": "show ...",
+    "whois": "whois ...",
 }
 
 export default function RootLayout({
@@ -102,25 +104,16 @@ export default function RootLayout({
     const handleStartQuery = useCallback(() => {
         const sText = (servers.includes(ALL_SERVERS_VALUE) ? availableServers : servers).join('+');
 
-        router.push(`/${queryType}/${encodeURIComponent(sText)}/${encodeURIComponent(queryValue)}`);
+        if (queryType === "whois") {
+            router.push(`/whois/${encodeURIComponent(queryValue)}`);
+        } else {
+            router.push(`/${queryType}/${encodeURIComponent(sText)}/${encodeURIComponent(queryValue)}`);
+        }
     }, [queryType, queryValue, servers, router]);
 
     const pathname = usePathname();
     useEffect(() => {
         const splitPath = pathname.split('/');
-        const serversInPath = splitPath[2];
-
-        if (serversInPath) {
-            const servers = decodeURIComponent(serversInPath).split('+');
-            if (servers.length === availableServers.length && servers.every(server => availableServers.includes(server))) {
-                setServers([ALL_SERVERS_VALUE].concat(availableServers));
-            } else {
-                setServers(servers);
-            }
-        } else {
-            setServers([ALL_SERVERS_VALUE].concat(availableServers));
-        }
-
         const method = splitPath[1];
         if (method && Object.keys(ROUTES).includes(method)) {
             setQueryType(method);
@@ -128,13 +121,32 @@ export default function RootLayout({
             setQueryType("generic");
         }
 
-        const queryValue = splitPath[3];
-        if (queryValue) {
-            setQueryValue(decodeURIComponent(queryValue));
+        if (method !== "whois") {
+            const serversInPath = splitPath[2];
+
+            if (serversInPath) {
+                const servers = decodeURIComponent(serversInPath).split('+');
+                if (servers.length === availableServers.length && servers.every(server => availableServers.includes(server))) {
+                    setServers([ALL_SERVERS_VALUE].concat(availableServers));
+                } else {
+                    setServers(servers);
+                }
+            } else {
+                setServers([ALL_SERVERS_VALUE].concat(availableServers));
+            }
+
+            const queryValue = splitPath[3];
+            if (queryValue) {
+                setQueryValue(decodeURIComponent(queryValue));
+            } else {
+                setQueryValue("");
+            }
         } else {
-            setQueryValue("");
+            setServers([ALL_SERVERS_VALUE].concat(availableServers));
+            const queryValue = splitPath[2];
+            setQueryValue(decodeURIComponent(queryValue || ""));
         }
-    }, [pathname]);
+    }, [pathname, availableServers]);
 
     return (
         <html lang="en">
@@ -202,7 +214,9 @@ export default function RootLayout({
                             </Toolbar>
                         </AppBar>
 
-                        {children}
+                        <Suspense fallback={<Container sx={{ mt: 2 }}><LinearProgress /></Container>}>
+                            {children}
+                        </Suspense>
                     </Box>
                 </ThemeProvider>
             </body>

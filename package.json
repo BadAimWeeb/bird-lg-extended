@@ -15,7 +15,8 @@
     "@mui/material": "^7.2.0",
     "next": "15.3.5",
     "react": "^19.0.0",
-    "react-dom": "^19.0.0"
+    "react-dom": "^19.0.0",
+    "whois": "^2.15.0"
   },
   "devDependencies": {
     "typescript": "^5",
