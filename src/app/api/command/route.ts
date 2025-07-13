@@ -115,7 +115,13 @@ export async function GET(request: NextRequest) {
 
                     let done = false;
                     while (!done) {
-                        const { value, done: isDone } = await reader.read();
+                        const { value, done: isDone } = await Promise.race([
+                            reader.read(),
+                            new Promise<never>((_, reject) => setTimeout(() => reject(new Error('Stream read timeout')), 15000))
+                        ]).catch(e => {
+                            reader.cancel();
+                            throw e;
+                        });
                         if (isDone) {
                             done = true;
                             o.cachedOn = Date.now();
@@ -142,11 +148,16 @@ export async function GET(request: NextRequest) {
 
     let keepAlive = setInterval(() => {
         if (streamController) {
-            streamController.enqueue(": keep-alive\n\n");
+            try {
+                streamController.enqueue(": keep-alive\n\n");
+            } catch (error) {
+                console.error("Error enqueuing keep-alive:", error);
+                clearInterval(keepAlive);
+            }
         }
     }, 10000);
 
-    await Promise.allSettled(ps).finally(() => {
+    Promise.allSettled(ps).finally(() => {
         if (streamController) {
             streamController.close();
         }
@@ -157,7 +168,7 @@ export async function GET(request: NextRequest) {
     return new Response(stream, {
         headers: {
             'Content-Type': 'text/event-stream',
-            'Cache-Control': 'no-cache',
+            'Cache-Control': 'max-age=5',
             'Connection': 'keep-alive'
         }
     });
