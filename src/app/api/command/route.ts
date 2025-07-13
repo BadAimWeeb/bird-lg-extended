@@ -3,7 +3,7 @@ import { SERVERS_REVERSE } from '@/utils_server/servers'
 import type { NextRequest } from 'next/server'
 
 import { EventEmitter } from 'events';
-import { SERVERS_CLIENT_VIEW } from '@/utils_server/servers_client_view';
+import { SERVERS_CLIENT_VIEW } from '@/utils_server/servers';
 
 const cache: Map<string, {
     cachedOn: number,

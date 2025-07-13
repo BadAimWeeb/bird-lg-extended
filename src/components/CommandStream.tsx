@@ -10,7 +10,7 @@ export function CommandStream({ cmd, servers }: { cmd: string, servers: string[]
     useEffect(() => {
         const interval = setInterval(() => {
             setCounterUpdate(c => c + 1);
-        }, 250);
+        }, 1000);
 
         let stream = new EventSource(`/api/command?cmd=${encodeURIComponent(cmd)}&servers=${encodeURIComponent(servers.join(','))}`);
 

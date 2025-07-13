@@ -94,3 +94,4 @@ if (SERVERS_RAW) {
 
 export default SERVERS;
 export { SERVERS_REVERSE };
+export const SERVERS_CLIENT_VIEW = Object.values(SERVERS);

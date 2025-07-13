@@ -42,9 +42,8 @@ export default function Overview({
     params: Promise<{ servers?: string }>
 }) {
     const servers = use(params);
-    const serversArray = useMemo(() => servers?.servers ? servers.servers.split(',').map(s => s.trim()) : [], [servers]);
+    const serversArray = useMemo(() => servers?.servers ? decodeURIComponent(servers.servers).split('+').map(s => s.trim()) : [], [servers]);
     const theme = useTheme();
-    const router = useRouter();
 
     const [summary, setSummary] = useState<Record<string, [lastUpdated: number, data?: {
         name: string;
@@ -68,12 +67,14 @@ export default function Overview({
         const interval = setInterval(fetchOverview, 5000); // Refresh every 5 seconds
 
         return () => clearInterval(interval);
-    }, [servers]);
+    }, [serversArray]);
 
     const [selectedProtocols, setSelectedProtocols] = useState<Set<string>>(() => new Set(DEFAULT_VIEW_PROTOCOLS));
     const availableProtocolTypes = useMemo(() => {
         const protocols = new Set<string>();
+        console.log(summary);
         Object.values(summary).forEach(([_, data]) => {
+            console.log(_, data)
             data?.forEach(entry => {
                 if (entry.proto) {
                     protocols.add(entry.proto.toLocaleLowerCase());
@@ -221,15 +222,11 @@ export default function Overview({
                                                     '&:last-child td, &:last-child th': { border: 0 },
                                                     bgcolor: alpha(row.state === "up" ? theme.palette.success.main : (row.info === "Passive" ? theme.palette.info.main : theme.palette.error.main), 0.8),
                                                     color: row.state === "up" ? theme.palette.success.contrastText : (row.info === "Passive" ? theme.palette.info.contrastText : theme.palette.error.contrastText),
-                                                    "& *": { color: "inherit" },
-                                                    cursor: "pointer"
-                                                }}
-                                                onClick={() => {
-                                                    router.push(`/detail/${encodeURIComponent(server)}/${encodeURIComponent(row.name)}`);
+                                                    "& *": { color: "inherit" }
                                                 }}
                                             >
                                                 <TableCell component="th" scope="row">
-                                                    {row.name}
+                                                    <Link href={`/detail/${encodeURIComponent(server)}/${encodeURIComponent(row.name)}`}>{row.name}</Link>
                                                 </TableCell>
                                                 <TableCell align="right">{row.proto}</TableCell>
                                                 <TableCell align="right">{row.table}</TableCell>

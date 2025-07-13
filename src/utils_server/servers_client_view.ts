@@ -1,3 +1,7 @@
-import SERVERS from "./servers";
+"use server";
 
-export const SERVERS_CLIENT_VIEW = Object.values(SERVERS);
+import { SERVERS_CLIENT_VIEW } from "./servers";
+
+export async function getServersClientView(): Promise<string[]> {
+    return Promise.resolve(SERVERS_CLIENT_VIEW);
+}

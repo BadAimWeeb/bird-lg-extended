@@ -1,6 +1,6 @@
 import { executeBirdCommand } from '@/utils_server/execute_bird';
 import SERVERS from '@/utils_server/servers'
-import { SERVERS_CLIENT_VIEW } from '@/utils_server/servers_client_view';
+import { SERVERS_CLIENT_VIEW } from '@/utils_server/servers';
 import type { NextRequest } from 'next/server'
 
 let cache: Record<string, {
@@ -26,7 +26,7 @@ let cache: Record<string, {
 
 export async function GET(request: NextRequest) {
     const searchParams = request.nextUrl.searchParams
-    const restrictServers = searchParams.get('restrict')?.split(',').map(s => s.trim()) || SERVERS_CLIENT_VIEW;
+    const restrictServers = searchParams.get('servers')?.split(',').map(s => s.trim()) || SERVERS_CLIENT_VIEW;
 
     let result: Record<string, [lastUpdated: number, data?: {
         name: string,
