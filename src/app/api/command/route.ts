@@ -72,11 +72,24 @@ export async function GET(request: NextRequest) {
 
             if (cached.liveFeed) {
                 ps.push(new Promise<void>((resolve) => {
+                    function generateTimeout() {
+                        return setTimeout(() => {
+                            emitData(JSON.stringify([server, '\nError retrieving data: Stream read timeout']));
+                            resolve();
+                        }, 15000);
+                    }
+
+                    let timeout: ReturnType<typeof setTimeout> = generateTimeout();
+
                     cached.liveFeed!.on('data', (data: string) => {
+                        clearTimeout(timeout);
+                        timeout = generateTimeout();
                         emitData(JSON.stringify([server, data]));
                     });
+
                     cached.liveFeed!.on('end', (ts: number) => {
                         emitData(JSON.stringify([server, ts]));
+                        clearTimeout(timeout);
                         resolve();
                     });
                 }));
@@ -86,19 +99,19 @@ export async function GET(request: NextRequest) {
         } else {
             emitData(JSON.stringify([server, Number.MAX_SAFE_INTEGER]));
 
+            let o: {
+                cachedOn: number,
+                data: string,
+                liveFeed?: EventEmitter
+            } = {
+                cachedOn: Number.MAX_SAFE_INTEGER,
+                data: '',
+                liveFeed: new EventEmitter()
+            };
+
+            cache.set(`${server}!@!${cmd}`, o);
+
             ps.push((async () => {
-                let o: {
-                    cachedOn: number,
-                    data: string,
-                    liveFeed?: EventEmitter
-                } = {
-                    cachedOn: Number.MAX_SAFE_INTEGER,
-                    data: '',
-                    liveFeed: new EventEmitter()
-                };
-
-                cache.set(`${server}!@!${cmd}`, o);
-
                 try {
                     let birdResponse = await executeBirdCommand(cmd, SERVERS_REVERSE[server]);
 
@@ -127,6 +140,7 @@ export async function GET(request: NextRequest) {
                             o.cachedOn = Date.now();
                             o.liveFeed!.emit('end', o.cachedOn);
                             emitData(JSON.stringify([server, o.cachedOn]));
+                            o.liveFeed!.removeAllListeners();
                             delete o.liveFeed;
                         } else {
                             let d = new TextDecoder().decode(value);
@@ -139,6 +153,10 @@ export async function GET(request: NextRequest) {
                 } catch (error) {
                     emitData(JSON.stringify([server, '\nError retrieving data: ' + (error instanceof Error ? error.message : String(error))]));
                     emitData(JSON.stringify([server, Number.MAX_SAFE_INTEGER]));
+                    o.liveFeed!.emit('data', '\nError retrieving data: ' + (error instanceof Error ? error.message : String(error)));
+                    o.liveFeed!.emit('end', Number.MAX_SAFE_INTEGER);
+                    console.error("Error retrieving data:", error);
+                    o.liveFeed!.removeAllListeners();
                     cache.delete(`${server}!@!${cmd}`);
                     return;
                 }
@@ -150,6 +168,7 @@ export async function GET(request: NextRequest) {
         if (streamController) {
             try {
                 streamController.enqueue(": keep-alive\n\n");
+                console.log(ps);
             } catch (error) {
                 console.error("Error enqueuing keep-alive:", error);
                 clearInterval(keepAlive);

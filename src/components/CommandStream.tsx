@@ -1,11 +1,12 @@
 "use client";
 
-import { Box, Tooltip, Typography } from "@mui/material";
+import { Box, LinearProgress, Tooltip, Typography } from "@mui/material";
 import { useEffect, useRef, useState } from "react";
 
 export function CommandStream({ cmd, servers }: { cmd: string, servers: string[] }) {
     const responses = useRef<Record<string, [number, string]>>({});
     const [_, setCounterUpdate] = useState(0);
+    const [isLoading, setIsLoading] = useState(true);
 
     useEffect(() => {
         const interval = setInterval(() => {
@@ -33,6 +34,8 @@ export function CommandStream({ cmd, servers }: { cmd: string, servers: string[]
 
             clearInterval(interval);
             setCounterUpdate(c => c + 1);
+
+            setIsLoading(false);
         };
 
         return () => {
@@ -47,6 +50,7 @@ export function CommandStream({ cmd, servers }: { cmd: string, servers: string[]
 
     return (
         <>
+            {isLoading && <LinearProgress />}
             {Object.entries(responses.current).sort(([serverA], [serverB]) => serverA.localeCompare(serverB)).map(([server, [lastUpdated, data]]) => (
                 <Box key={server} sx={{ pt: 1.5, pb: 1.5 }}>
                     <Box sx={{ mb: 1 }}>
