@@ -2,10 +2,10 @@
 
 export async function getDynamicClientConfig() {
     return {
-        title: process.env.NEXT_PUBLIC_TITLE,
-        description: process.env.NEXT_PUBLIC_DESCRIPTION,
-        navbarBrand: process.env.NEXT_PUBLIC_NAVBAR_BRAND,
-        ibgpRegex: process.env.NEXT_PUBLIC_IBGP_REGEX,
-        summaryDefaultViewProtocol: process.env.NEXT_PUBLIC_SUMMARY_DEFAULT_VIEW_PROTOCOL
+        title: process.env.FRONTEND_TITLE,
+        description: process.env.FRONTEND_DESCRIPTION,
+        navbarBrand: process.env.FRONTEND_NAVBAR_BRAND,
+        ibgpRegex: process.env.FRONTEND_IBGP_REGEX,
+        summaryDefaultViewProtocol: process.env.FRONTEND_SUMMARY_DEFAULT_VIEW_PROTOCOL
     };
 }

@@ -38,7 +38,7 @@ export default function Overview({
 }) {
     const dynamicEnvVariable = useDynamicEnvVariable();
     const REGEX_IBGP = useMemo(() => new RegExp(dynamicEnvVariable.ibgpRegex || "^ibgp_.*"), [dynamicEnvVariable]);
-    const DEFAULT_VIEW_PROTOCOL_STRING = useMemo(() => dynamicEnvVariable.summaryDefaultViewProtocol || "bgp,ospf,isis,babel", [dynamicEnvVariable]);
+    const DEFAULT_VIEW_PROTOCOL_STRING = useMemo(() => dynamicEnvVariable.summaryDefaultViewProtocol || "bgp,ibgp,ebgp,ospf,isis,babel", [dynamicEnvVariable]);
     const DEFAULT_VIEW_PROTOCOLS = useMemo(() => DEFAULT_VIEW_PROTOCOL_STRING.split(",").map(proto => proto.trim()), [DEFAULT_VIEW_PROTOCOL_STRING]);
 
     const servers = use(params);
