@@ -7,8 +7,7 @@ import { AppBar, Box, Button, Container, Divider, FormControl, InputLabel, Linea
 import Link from 'next/link';
 import { getServersClientView } from '@/utils_server/servers_client_view';
 import { usePathname, useRouter } from 'next/navigation';
-import StartIcon from "@mui/icons-material/Start"
-import { decode } from 'punycode';
+import StartIcon from "@mui/icons-material/Start";
 
 const roboto = Roboto({
     variable: "--font-roboto",
@@ -34,10 +33,10 @@ const ROUTES = {
     "route_from_origin_all_primary": "show route where bgp_path.last = ... all primary",
     "route": "show route for ...",
     "route_all": "show route for ... all",
-    // "route_bgpmap": "show route for ... (bgpmap)",
+    "route_bgpmap": "show route for ... (bgpmap)",
     "route_where": "show route where net ~ [ ... ]",
     "route_where_all": "show route where net ~ [ ... ] all",
-    // "route_where_bgpmap": "show route where net ~ [ ... ] (bgpmap)",
+    "route_where_bgpmap": "show route where net ~ [ ... ] (bgpmap)",
     "route_generic": "show route ...",
     "generic": "show ...",
     "whois": "whois ...",
@@ -93,14 +92,6 @@ export default function RootLayout({
         });
     }, [availableServers]);
 
-    const handleChangeQueryType = useCallback((event: SelectChangeEvent<string>) => {
-        setQueryType(event.target.value);
-    }, []);
-
-    const handleChangeQueryValue = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
-        setQueryValue(event.target.value);
-    }, []);
-
     const router = useRouter();
     const handleStartQuery = useCallback(() => {
         const sText = (servers.includes(ALL_SERVERS_VALUE) ? availableServers : servers).join('+');
@@ -111,6 +102,21 @@ export default function RootLayout({
             router.push(`/${queryType}/${encodeURIComponent(sText)}/${encodeURIComponent(queryValue)}`);
         }
     }, [queryType, queryValue, servers, router]);
+
+    const handleChangeQueryType = useCallback((event: SelectChangeEvent<string>) => {
+        setQueryType(event.target.value);
+    }, []);
+
+    const handleChangeQueryValue = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
+        setQueryValue(event.target.value);
+    }, []);
+
+    const handleEnterQueryValue = useCallback((event: React.KeyboardEvent<HTMLInputElement>) => {
+        if (event.key === "Enter") {
+            event.preventDefault();
+            handleStartQuery();
+        }
+    }, [handleStartQuery]);
 
     const pathname = usePathname();
     useEffect(() => {
@@ -153,7 +159,7 @@ export default function RootLayout({
         <html lang="en">
             <body className={`${roboto.variable} ${robotoMono.variable}`}>
                 <ThemeProvider theme={theme}>
-                    <Box>
+                    <Box sx={{ display: "flex", flexDirection: "column", minHeight: "100vh" }}>
                         <AppBar position="static">
                             <Toolbar sx={{ flexWrap: "wrap", gap: 2, p: 1 }}>
                                 <Link href="/summary">
@@ -206,6 +212,7 @@ export default function RootLayout({
                                     <TextField
                                         value={queryValue}
                                         onChange={handleChangeQueryValue}
+                                        onKeyUp={handleEnterQueryValue}
                                         size="small"
                                         sx={{ maxWidth: 300, fontSize: 14, flexGrow: 100 }}
                                         placeholder="Target..."
@@ -216,7 +223,9 @@ export default function RootLayout({
                         </AppBar>
 
                         <Suspense fallback={<Container sx={{ mt: 2 }}><LinearProgress /></Container>}>
-                            {children}
+                            <Box sx={{ display: "flex", flexDirection: "column", flexGrow: 1 }}>
+                                {children}
+                            </Box>
                         </Suspense>
                     </Box>
                 </ThemeProvider>
