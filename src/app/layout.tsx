@@ -3,6 +3,8 @@ import "@/app/globals.css";
 
 import { getDynamicClientConfig } from "@/utils_server/dynamic_brand";
 
+export const dynamic = "force-dynamic";
+
 const dynamicConfig = await getDynamicClientConfig();
 
 export const metadata: Metadata = {
@@ -11,7 +13,6 @@ export const metadata: Metadata = {
 };
 
 import RootLayout from "./layout.client";
-import { DynamicEnvVariableProvider } from "@/components/DynamicEnvVariable";
 export default function Layout({ children }: Readonly<{ children: React.ReactNode }>) {
   return <RootLayout dynamic={{
     title: dynamicConfig.title || "Bird LG Extended",
