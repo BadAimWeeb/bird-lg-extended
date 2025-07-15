@@ -4,7 +4,7 @@ import { Box, LinearProgress, Tooltip, Typography } from "@mui/material";
 import { useEffect, useRef, useState } from "react";
 import { SmartRender } from "./SmartRender";
 
-export function CommandStream({ cmd, servers }: { cmd: string, servers: string[] }) {
+export function CommandStream({ cmd, servers, type }: { cmd: string, servers: string[], type?: "bird" | "traceroute" }) {
     const responses = useRef<Record<string, [number, string]>>({});
     const [_, setCounterUpdate] = useState(0);
     const [isLoading, setIsLoading] = useState(true);
@@ -14,7 +14,7 @@ export function CommandStream({ cmd, servers }: { cmd: string, servers: string[]
             setCounterUpdate(c => c + 1);
         }, 1000);
 
-        let stream = new EventSource(`/api/command?cmd=${encodeURIComponent(cmd)}&servers=${encodeURIComponent(servers.join(','))}`);
+        let stream = new EventSource(`/api/command?cmd=${encodeURIComponent(cmd)}&servers=${encodeURIComponent(servers.join(','))}&type=${type || "bird"}`);
 
         stream.onmessage = (event) => {
             const [server, data] = JSON.parse(event.data);

@@ -12,6 +12,6 @@ export default function RouteFromProtocolPrimary({
     const p = use(params);
 
     return <Container sx={{ mt: 2 }}>
-        <CommandStream cmd={`show route protocol "${decodeURIComponent(p.param || "")}" primary`} servers={decodeURIComponent(p.servers).split("+")} />
+        <CommandStream cmd={`show route protocol '${decodeURIComponent(p.param || "")}' primary`} servers={decodeURIComponent(p.servers).split("+")} />
     </Container>;
 }

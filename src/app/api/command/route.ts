@@ -1,4 +1,4 @@
-import { executeBirdCommand } from '@/utils_server/execute_bird';
+import { executeBirdCommand, executeTraceroute } from '@/utils_server/execute_bird';
 import { SERVERS_REVERSE } from '@/utils_server/servers'
 import type { NextRequest } from 'next/server'
 
@@ -25,6 +25,7 @@ export async function GET(request: NextRequest) {
     const searchParams = request.nextUrl.searchParams
     const restrictServers = searchParams.get('servers')?.split(',').map(s => s.trim()) || SERVERS_CLIENT_VIEW;
     const cmd = searchParams.get('cmd')?.trim();
+    const type = searchParams.get('type')?.trim() || 'bird';
 
     if (restrictServers.length === 0) {
         return Response.json({ error: 'No servers specified' }, { status: 400 });
@@ -32,6 +33,10 @@ export async function GET(request: NextRequest) {
 
     if (!cmd) {
         return Response.json({ error: 'No command specified' }, { status: 400 });
+    }
+
+    if (type !== 'bird' && type !== 'traceroute') {
+        return Response.json({ error: 'Invalid type specified' }, { status: 400 });
     }
 
     for (const server of restrictServers) {
@@ -65,7 +70,7 @@ export async function GET(request: NextRequest) {
     const ps: Promise<any>[] = [];
     for (const server of restrictServers) {
         // Check if cache exists and is fresh
-        const cached = cache.get(`${server}!@!${cmd}`);
+        const cached = cache.get(`${server}!@!${type}!@!${cmd}`);
         if (cached && Date.now() - cached.cachedOn < 5000) {
             emitData(JSON.stringify([server, cached.cachedOn]));
             emitData(JSON.stringify([server, cached.data]));
@@ -111,17 +116,17 @@ export async function GET(request: NextRequest) {
                 liveFeed: new EventEmitter()
             };
 
-            cache.set(`${server}!@!${cmd}`, o);
+            cache.set(`${server}!@!${type}!@!${cmd}`, o);
 
             ps.push((async () => {
                 try {
-                    let birdResponse = await executeBirdCommand(cmd, SERVERS_REVERSE[server]);
+                    let dataResponse = type === "bird" ? await executeBirdCommand(cmd, SERVERS_REVERSE[server]) : await executeTraceroute(cmd, SERVERS_REVERSE[server]);
 
-                    if (!birdResponse.ok) {
+                    if (!dataResponse.ok) {
                         throw new Error(`Failed to execute command on ${server}`);
                     }
 
-                    const stream = birdResponse.body;
+                    const stream = dataResponse.body;
                     if (!stream) {
                         throw new Error(`No response body from ${server}`);
                     }

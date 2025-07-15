@@ -12,6 +12,6 @@ export default function RouteFilteredFromProtocolAll({
     const p = use(params);
 
     return <Container sx={{ mt: 2 }}>
-        <CommandStream cmd={`show route filtered protocol "${decodeURIComponent(p.param || "")}" all`} servers={decodeURIComponent(p.servers).split("+")} />
+        <CommandStream cmd={`show route filtered protocol '${decodeURIComponent(p.param || "")}' all`} servers={decodeURIComponent(p.servers).split("+")} />
     </Container>;
 }
