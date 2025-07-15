@@ -63,6 +63,14 @@ export default function RootLayout({
         colorSchemes: {
             dark: true,
         },
+        palette: {
+            primary: {
+                main: "#26C6DA",
+                light: "#80DEEA",
+                dark: "#00ACC1",
+                contrastText: "#000000"
+            }
+        }
     }));
 
     const [queryValue, setQueryValue] = useState<string>("");
@@ -172,7 +180,7 @@ export default function RootLayout({
                 <DynamicEnvVariableProvider value={dynamic}>
                     <ThemeProvider theme={theme}>
                         <Box sx={{ display: "flex", flexDirection: "column", minHeight: "100vh" }}>
-                            <AppBar position="static">
+                            <AppBar position="static" color="primary">
                                 <Toolbar sx={{ flexWrap: "wrap", gap: 2, p: 1 }}>
                                     <Link href="/summary">
                                         <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
