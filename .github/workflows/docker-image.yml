@@ -14,12 +14,15 @@ jobs:
     - name: Log in to ghcr.io
       run: echo "${{ secrets.GHCR_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
 
-    - name: Build and tag image
+    - name: Lowercase repository name & get commit SHA
+      env:
+        GITHUB_REPOSITORY: ${{ github.repository }}
       run: |
-        COMMIT_SHA=$(echo $GITHUB_SHA | cut -c1-7)
-        docker build -t ghcr.io/${{ github.repository_owner }}/${{ github.repository }}:$COMMIT_SHA -f Dockerfile .    
+        echo "REPO_NAME=${GITHUB_REPOSITORY@L}" >> $GITHUB_ENV
+        echo "COMMIT_SHA=$(echo $GITHUB_SHA | cut -c1-7)" >> $GITHUB_ENV
+
+    - name: Build and tag image
+      run: docker build -t ghcr.io/$REPO_NAME:$COMMIT_SHA -f Dockerfile .    
 
     - name: Push image to GHCR
-      run: |
-        COMMIT_SHA=$(echo $GITHUB_SHA | cut -c1-7)
-        docker push ghcr.io/${{ github.repository_owner }}/${{ github.repository }}:$COMMIT_SHA
+      run: docker push ghcr.io/$REPO_NAME:$COMMIT_SHA
