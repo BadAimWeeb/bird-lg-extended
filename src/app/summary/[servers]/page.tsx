@@ -7,12 +7,7 @@ import ExpandMoreIcon from "@mui/icons-material/ExpandMore"
 import ExpandLessIcon from "@mui/icons-material/ExpandLess";
 import { Collapsable } from "@/components/Collapsable";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-
-
-const REGEX_IBGP = new RegExp(process.env.NEXT_PUBLIC_IBGP_REGEX || "^ibgp_.*");
-const DEFAULT_VIEW_PROTOCOL_STRING = process.env.NEXT_PUBLIC_SUMMARY_DEFAULT_VIEW_PROTOCOL || "bgp,ospf,isis,babel";
-const DEFAULT_VIEW_PROTOCOLS = DEFAULT_VIEW_PROTOCOL_STRING.split(",").map(proto => proto.trim());
+import { useDynamicEnvVariable } from "@/components/DynamicEnvVariable";
 
 const NAME_MAPPINGLIST: Record<string, string> = {
     "bgp": "BGP",
@@ -41,6 +36,11 @@ export default function Overview({
 }: {
     params: Promise<{ servers?: string }>
 }) {
+    const dynamicEnvVariable = useDynamicEnvVariable();
+    const REGEX_IBGP = useMemo(() => new RegExp(dynamicEnvVariable.ibgpRegex || "^ibgp_.*"), [dynamicEnvVariable]);
+    const DEFAULT_VIEW_PROTOCOL_STRING = useMemo(() => dynamicEnvVariable.summaryDefaultViewProtocol || "bgp,ospf,isis,babel", [dynamicEnvVariable]);
+    const DEFAULT_VIEW_PROTOCOLS = useMemo(() => DEFAULT_VIEW_PROTOCOL_STRING.split(",").map(proto => proto.trim()), [DEFAULT_VIEW_PROTOCOL_STRING]);
+
     const servers = use(params);
     const serversArray = useMemo(() => servers?.servers ? decodeURIComponent(servers.servers).split('+').map(s => s.trim()) : [], [servers]);
     const theme = useTheme();
@@ -142,7 +142,7 @@ export default function Overview({
                         setSelectedProtocols(newProtocols);
                     }} />} label="BGP" />
                     {
-                        process.env.NEXT_PUBLIC_IBGP_REGEX ? (
+                        dynamicEnvVariable.ibgpRegex ? (
                             <Box sx={{ display: 'inline-block', filter: 'brightness(75%)' }}>
                                 <FormControlLabel control={<Checkbox checked={selectedProtocols.has("ebgp")} onChange={() => {
                                     const newProtocols = new Set(selectedProtocols);

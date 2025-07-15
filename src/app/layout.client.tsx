@@ -2,12 +2,13 @@
 
 import { ThemeProvider, createTheme } from '@mui/material/styles';
 import { Roboto, Roboto_Mono } from "next/font/google";
-import { Suspense, useCallback, useEffect, useState } from "react";
+import { Suspense, use, useCallback, useEffect, useState } from "react";
 import { AppBar, Box, Button, Container, Divider, FormControl, InputLabel, LinearProgress, MenuItem, OutlinedInput, Select, type SelectChangeEvent, TextField, Toolbar, Typography } from "@mui/material";
 import Link from 'next/link';
 import { getServersClientView } from '@/utils_server/servers_client_view';
 import { usePathname, useRouter } from 'next/navigation';
 import StartIcon from "@mui/icons-material/Start";
+import { DynamicEnvVariableProvider, useDynamicEnvVariable } from '@/components/DynamicEnvVariable';
 
 const roboto = Roboto({
     variable: "--font-roboto",
@@ -45,9 +46,19 @@ const ROUTES = {
 
 export default function RootLayout({
     children,
+    dynamic
 }: Readonly<{
     children: React.ReactNode;
+    dynamic: {
+        title: string;
+        description: string;
+        navbarBrand: string;
+        ibgpRegex: string;
+        summaryDefaultViewProtocol: string;
+    };
 }>) {
+    const dynamicConfig = dynamic;
+
     const [theme] = useState(() => createTheme({
         colorSchemes: {
             dark: true,
@@ -158,77 +169,79 @@ export default function RootLayout({
     return (
         <html lang="en">
             <body className={`${roboto.variable} ${robotoMono.variable}`}>
-                <ThemeProvider theme={theme}>
-                    <Box sx={{ display: "flex", flexDirection: "column", minHeight: "100vh" }}>
-                        <AppBar position="static">
-                            <Toolbar sx={{ flexWrap: "wrap", gap: 2, p: 1 }}>
-                                <Link href="/summary">
-                                    <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
-                                        {process.env.NEXT_PUBLIC_NAVBAR_BRAND || "bird-lg Extended"}
-                                    </Typography>
-                                </Link>
-                                <Box sx={{ flexGrow: 1 }} />
-                                <Box sx={{ display: "flex", alignItems: "center", flexWrap: "wrap" }}>
-                                    <FormControl sx={{ minWidth: 150, maxWidth: 200, flexGrow: 1 }}>
-                                        <InputLabel id="multiserver-selector-label">Servers</InputLabel>
+                <DynamicEnvVariableProvider value={dynamic}>
+                    <ThemeProvider theme={theme}>
+                        <Box sx={{ display: "flex", flexDirection: "column", minHeight: "100vh" }}>
+                            <AppBar position="static">
+                                <Toolbar sx={{ flexWrap: "wrap", gap: 2, p: 1 }}>
+                                    <Link href="/summary">
+                                        <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
+                                            {dynamicConfig.navbarBrand || "bird-lg Extended"}
+                                        </Typography>
+                                    </Link>
+                                    <Box sx={{ flexGrow: 1 }} />
+                                    <Box sx={{ display: "flex", alignItems: "center", flexWrap: "wrap" }}>
+                                        <FormControl sx={{ minWidth: 150, maxWidth: 200, flexGrow: 1 }}>
+                                            <InputLabel id="multiserver-selector-label">Servers</InputLabel>
+                                            <Select
+                                                labelId="multiserver-selector-label"
+                                                id="multiserver-selector"
+                                                multiple
+                                                value={servers}
+                                                onChange={handleChangeServerSelect}
+                                                input={<OutlinedInput label="Servers" size="small" />}
+                                                renderValue={(selected) => (
+                                                    selected.includes(ALL_SERVERS_VALUE) ? "All Servers" : selected.sort().join(', ')
+                                                )}
+                                                sx={{ fontSize: 14 }}
+                                            >
+                                                <MenuItem value={ALL_SERVERS_VALUE}>
+                                                    All Servers
+                                                </MenuItem>
+                                                <Divider />
+                                                {availableServers.map((name) => (
+                                                    <MenuItem
+                                                        key={name}
+                                                        value={name}
+                                                    >
+                                                        {name}
+                                                    </MenuItem>
+                                                ))}
+                                            </Select>
+                                        </FormControl>
                                         <Select
-                                            labelId="multiserver-selector-label"
-                                            id="multiserver-selector"
-                                            multiple
-                                            value={servers}
-                                            onChange={handleChangeServerSelect}
-                                            input={<OutlinedInput label="Servers" size="small" />}
-                                            renderValue={(selected) => (
-                                                selected.includes(ALL_SERVERS_VALUE) ? "All Servers" : selected.sort().join(', ')
-                                            )}
-                                            sx={{ fontSize: 14 }}
+                                            value={queryType}
+                                            onChange={handleChangeQueryType}
+                                            size="small"
+                                            sx={{ width: 300, fontSize: 14 }}
                                         >
-                                            <MenuItem value={ALL_SERVERS_VALUE}>
-                                                All Servers
-                                            </MenuItem>
-                                            <Divider />
-                                            {availableServers.map((name) => (
-                                                <MenuItem
-                                                    key={name}
-                                                    value={name}
-                                                >
-                                                    {name}
+                                            {Object.entries(ROUTES).map(([key, value]) => (
+                                                <MenuItem key={key} value={key}>
+                                                    {value}
                                                 </MenuItem>
                                             ))}
                                         </Select>
-                                    </FormControl>
-                                    <Select
-                                        value={queryType}
-                                        onChange={handleChangeQueryType}
-                                        size="small"
-                                        sx={{ width: 300, fontSize: 14 }}
-                                    >
-                                        {Object.entries(ROUTES).map(([key, value]) => (
-                                            <MenuItem key={key} value={key}>
-                                                {value}
-                                            </MenuItem>
-                                        ))}
-                                    </Select>
-                                    <TextField
-                                        value={queryValue}
-                                        onChange={handleChangeQueryValue}
-                                        onKeyUp={handleEnterQueryValue}
-                                        size="small"
-                                        sx={{ maxWidth: 300, fontSize: 14, flexGrow: 100 }}
-                                        placeholder="Target..."
-                                    />
-                                    <Button color="success" variant="contained" onClick={handleStartQuery} sx={{ height: 40 }}><StartIcon /></Button>
-                                </Box>
-                            </Toolbar>
-                        </AppBar>
+                                        <TextField
+                                            value={queryValue}
+                                            onChange={handleChangeQueryValue}
+                                            onKeyUp={handleEnterQueryValue}
+                                            size="small"
+                                            sx={{ maxWidth: 300, fontSize: 14, flexGrow: 100 }}
+                                            placeholder="Target..."
+                                        />
+                                        <Button color="success" variant="contained" onClick={handleStartQuery} sx={{ height: 40 }}><StartIcon /></Button>
+                                    </Box>
+                                </Toolbar>
+                            </AppBar>
 
-                        <Suspense fallback={<Container sx={{ mt: 2 }}><LinearProgress /></Container>}>
-                            <Box sx={{ display: "flex", flexDirection: "column", flexGrow: 1 }}>
-                                {children}
-                            </Box>
-                        </Suspense>
-                    </Box>
-                </ThemeProvider>
+                            <Suspense fallback={<Container sx={{ mt: 2 }}><LinearProgress /></Container>}>
+                                <Box sx={{ display: "flex", flexDirection: "column", flexGrow: 1 }}>
+                                    {children}
+                                </Box>
+                            </Suspense>
+                        </Box>
+                    </ThemeProvider>
+                </DynamicEnvVariableProvider>
             </body>
         </html>
     );
