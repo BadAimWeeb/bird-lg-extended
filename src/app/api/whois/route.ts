@@ -11,7 +11,7 @@ export async function GET(request: NextRequest) {
     }
 
     try {
-        return (await getWhoisWithCache(resource)).data;
+        return new Response((await getWhoisWithCache(resource)).data);
     } catch (error) {
         return new Response(`Error fetching WHOIS data: ${error instanceof Error ? error.message : 'Unknown error'}`, { status: 500 });
     }
