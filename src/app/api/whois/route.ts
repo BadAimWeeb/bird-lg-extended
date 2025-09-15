@@ -6,19 +6,14 @@ let cache: Record<string, Promise<{
     data: string
 }> | undefined> = {}
 
-export async function GET(request: NextRequest) {
-    const searchParams = request.nextUrl.searchParams
-    const resource = searchParams.get('resource')?.trim();
+export const whoisCache = cache;
 
-    if (!resource) {
-        return new Response('Missing resource parameter', { status: 400 });
-    }
-
+export async function getWhoisWithCache(resource: string) {
     // Check cache
     if (cache[resource]) {
         const cached = await cache[resource];
         if (Date.now() - cached.lastCached < 5 * 60 * 1000) { // 5 minutes
-            return new Response(cached.data);
+            return cached;
         } else {
             cache[resource] = undefined; // Invalidate cache
         }
@@ -52,11 +47,24 @@ export async function GET(request: NextRequest) {
                 }, 5 * 60 * 1000);
             }
         });
+    }).catch(e => {
+        cache[resource] = undefined;
+        throw e;  
     });
 
+    return cache[resource];
+}
+
+export async function GET(request: NextRequest) {
+    const searchParams = request.nextUrl.searchParams
+    const resource = searchParams.get('resource')?.trim();
+
+    if (!resource) {
+        return new Response('Missing resource parameter', { status: 400 });
+    }
+
     try {
-        const result = await cache[resource];
-        return new Response(result.data);
+        return (await getWhoisWithCache(resource)).data;
     } catch (error) {
         return new Response(`Error fetching WHOIS data: ${error instanceof Error ? error.message : 'Unknown error'}`, { status: 500 });
     }

@@ -24,6 +24,39 @@ let cache: Record<string, {
     }
 ]));
 
+export const summaryCache = cache;
+
+setInterval(async () => {
+    for (const server in cache) {
+        const now = Date.now();
+        if (now - cache[server].lastChecked > 2500) {
+            if (!cache[server].fetching) {
+                cache[server].fetching = true;
+                (async () => {
+                    try {
+                        const birdResponse = await executeBirdCommand('show protocols', cache[server].endpoint);
+
+                        const dataRaw = await birdResponse.text();
+                        const dataLines = dataRaw.split('\n').filter(line => line.trim() !== '');
+
+                        const data = dataLines.map(line => {
+                            const [name, proto, table, state, since, info] = line.split(/ +/).map(s => s.trim());
+                            return { name, proto, table, state, since, info };
+                        }).slice(1); // Skip the header line
+
+                        cache[server].lastChecked = now;
+                        cache[server].data = data;
+                    } catch (error) {
+                        console.error(`Error fetching data from ${server}:`, error);
+                    } finally {
+                        cache[server].fetching = false;
+                    }
+                })();
+            }
+        }
+    }
+}, 2000);
+
 export async function GET(request: NextRequest) {
     const searchParams = request.nextUrl.searchParams
     const restrictServers = searchParams.get('servers')?.split(',').map(s => s.trim()) || SERVERS_CLIENT_VIEW;
@@ -45,31 +78,6 @@ export async function GET(request: NextRequest) {
 
         // Always use cached data
         result[server] = [cache[server].lastChecked, cache[server].data || []];
-
-        const now = Date.now();
-        if (now - cache[server].lastChecked > 2500) {
-            if (!cache[server].fetching) {
-                let p = (async () => {
-                    try {
-                        const birdResponse = await executeBirdCommand('show protocols', cache[server].endpoint);
-
-                        const dataRaw = await birdResponse.text();
-                        const dataLines = dataRaw.split('\n').filter(line => line.trim() !== '');
-
-                        const data = dataLines.map(line => {
-                            const [name, proto, table, state, since, info] = line.split(/ +/).map(s => s.trim());
-                            return { name, proto, table, state, since, info };
-                        }).slice(1); // Skip the header line
-
-                        cache[server].lastChecked = now;
-                        cache[server].data = data;
-                        cache[server].fetching = false;
-                    } catch (error) {
-                        console.error(`Error fetching data from ${server}:`, error);
-                    }
-                })();
-            }
-        }
     }
 
     return Response.json(result);
