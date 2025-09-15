@@ -36,7 +36,7 @@ export async function POST(request: NextRequest) {
             case "bird": {
                 const requests = Promise.all((servers.length ? servers : Object.keys(summaryCache)).map(async server => {
                     try {
-                        const birdResponse = await executeBirdCommand(args, server);
+                        const birdResponse = await executeBirdCommand(args, summaryCache[server].endpoint);
 
                         const data = await birdResponse.text();
                         return { server, data };
@@ -54,7 +54,7 @@ export async function POST(request: NextRequest) {
             case "traceroute": {
                 const requests = Promise.all((servers.length ? servers : Object.keys(summaryCache)).map(async server => {
                     try {
-                        const tracerouteResponse = await executeTraceroute(args, server);
+                        const tracerouteResponse = await executeTraceroute(args, summaryCache[server].endpoint);
 
                         const data = await tracerouteResponse.text();
                         return { server, data };
