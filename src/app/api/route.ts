@@ -26,7 +26,7 @@ export async function POST(request: NextRequest) {
             case "summary": {
                 return new Response(JSON.stringify({
                     error: "",
-                    result: servers.map(server => ({
+                    result: (servers.length ? servers : Object.keys(summaryCache)).map(server => ({
                         server,
                         data: summaryCache[server]?.data || []
                     }))
@@ -34,7 +34,7 @@ export async function POST(request: NextRequest) {
             }
 
             case "bird": {
-                const requests = Promise.all(servers.map(async server => {
+                const requests = Promise.all((servers.length ? servers : Object.keys(summaryCache)).map(async server => {
                     try {
                         const birdResponse = await executeBirdCommand(args, server);
 
@@ -52,7 +52,7 @@ export async function POST(request: NextRequest) {
             }
 
             case "traceroute": {
-                const requests = Promise.all(servers.map(async server => {
+                const requests = Promise.all((servers.length ? servers : Object.keys(summaryCache)).map(async server => {
                     try {
                         const tracerouteResponse = await executeTraceroute(args, server);
 
