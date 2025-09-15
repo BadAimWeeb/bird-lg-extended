@@ -1,30 +1,9 @@
 import { executeBirdCommand } from '@/utils_server/execute_bird';
-import SERVERS from '@/utils_server/servers'
+
 import { SERVERS_CLIENT_VIEW } from '@/utils_server/servers';
 import type { NextRequest } from 'next/server'
 
-let cache: Record<string, {
-    lastChecked: number,
-    endpoint: string,
-    data?: {
-        name: string,
-        proto: string,
-        table: string,
-        state: string,
-        since: string,
-        info: string
-    }[],
-    fetching: boolean
-}> = Object.fromEntries(Object.entries(SERVERS).map(([key, value]) => [
-    value,
-    {
-        lastChecked: 0,
-        endpoint: key,
-        fetching: false
-    }
-]));
-
-export const summaryCache = cache;
+import { summaryCache as cache } from './cache';
 
 setInterval(async () => {
     for (const server in cache) {

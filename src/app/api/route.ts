@@ -1,8 +1,8 @@
 import type { NextRequest } from 'next/server';
 
-import { summaryCache } from "./summary/route";
+import { summaryCache } from "./summary/cache";
 import { executeBirdCommand, executeTraceroute } from "@/utils_server/execute_bird";
-import { getWhoisWithCache } from "./whois/route";
+import { getWhoisWithCache } from "./whois/cache";
 
 export async function POST(request: NextRequest) {
     try {
