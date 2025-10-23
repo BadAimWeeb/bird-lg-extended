@@ -36,6 +36,8 @@ export default function RootLayout({
         summaryDefaultViewProtocol: string;
         baw_useLargeQueryInterface: boolean;
         useUnstableServerIdentifier: boolean;
+
+        tmp_serversClientView: string[];
     };
 }>) {
     const dynamicConfig = dynamic;
