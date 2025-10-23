@@ -9,6 +9,8 @@ declare namespace NodeJS {
         DEFAULT_PROXY_PORT?: string;
         DEFAULT_BIRD_LG_DOMAIN?: string;
         WHOIS_SERVER?: string;
+        FALLBACK_WHOIS_SERVER?: string;
+        WHOIS_FALLBACK_SPLIT_MODE?: string;
         SERVERS?: string;
     }
 }
