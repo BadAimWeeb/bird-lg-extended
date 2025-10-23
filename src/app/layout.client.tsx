@@ -2,13 +2,12 @@
 
 import { ThemeProvider, createTheme } from '@mui/material/styles';
 import { Roboto, Roboto_Mono } from "next/font/google";
-import { Suspense, use, useCallback, useEffect, useState } from "react";
-import { AppBar, Box, Button, Container, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, Divider, FormControl, InputLabel, LinearProgress, MenuItem, OutlinedInput, Select, type SelectChangeEvent, TextField, Toolbar, Typography } from "@mui/material";
+import { Suspense, useCallback, useEffect, useState } from "react";
+import { AppBar, Box, Button, Container, Dialog, DialogActions, DialogContent, DialogTitle, Divider, FormControl, InputLabel, LinearProgress, MenuItem, OutlinedInput, Select, type SelectChangeEvent, TextField, Toolbar, Typography } from "@mui/material";
 import Link from 'next/link';
-import { getServersClientView } from '@/utils_server/servers_client_view';
 import { usePathname, useRouter } from 'next/navigation';
 import StartIcon from "@mui/icons-material/Start";
-import { DynamicEnvVariableProvider, useDynamicEnvVariable } from '@/components/DynamicEnvVariable';
+import { DynamicEnvVariableProvider } from '@/components/DynamicEnvVariable';
 import { LargeQueryInterface } from '@/components/LargeQuery';
 import { ROUTES } from '../utils_client/availableURLRoute';
 
@@ -60,11 +59,7 @@ export default function RootLayout({
     const [queryValue, setQueryValue] = useState<string>("");
     const [queryType, setQueryType] = useState<string>("generic");
     const [servers, setServers] = useState<string[]>([]);
-    const [availableServers, setAvailableServers] = useState<string[]>([]);
-
-    useEffect(() => {
-        getServersClientView().then(setAvailableServers);
-    }, []);
+    const availableServers = dynamic.tmp_serversClientView;
 
     const handleChangeServerSelect = useCallback((event: SelectChangeEvent<typeof servers>) => {
         const {
