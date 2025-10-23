@@ -8,7 +8,6 @@ import ExpandLessIcon from "@mui/icons-material/ExpandLess";
 import { Collapsable } from "@/components/Collapsable";
 import Link from "next/link";
 import { useDynamicEnvVariable } from "@/components/DynamicEnvVariable";
-import { getServersClientView } from "@/utils_server/servers_client_view";
 
 const NAME_MAPPINGLIST: Record<string, string> = {
     "bgp": "BGP",
@@ -32,8 +31,6 @@ const NAME_MAPPINGLIST: Record<string, string> = {
     "ibgp": "iBGP"
 };
 
-const AVAILABLE_SERVER_PROMISE = getServersClientView();
-
 export default function Overview({
     params
 }: {
@@ -45,7 +42,7 @@ export default function Overview({
     const DEFAULT_VIEW_PROTOCOLS = useMemo(() => DEFAULT_VIEW_PROTOCOL_STRING.split(",").map(proto => proto.trim()), [DEFAULT_VIEW_PROTOCOL_STRING]);
 
     const servers = use(params);
-    const availableServers = use(AVAILABLE_SERVER_PROMISE);
+    const availableServers = dynamicEnvVariable.tmp_serversClientView;
     const serversArray = useMemo(() => servers?.servers ? (
         dynamicEnvVariable.useUnstableServerIdentifier ?
         (() => {

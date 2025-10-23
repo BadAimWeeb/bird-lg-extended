@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import "@/app/globals.css";
 
 import { getDynamicClientConfig } from "@/utils_server/dynamic_brand";
+import { SERVERS_CLIENT_VIEW } from "@/utils_server/servers";
 
 export const dynamic = "force-dynamic";
 
@@ -13,6 +14,7 @@ export const metadata: Metadata = {
 };
 
 import RootLayout from "./layout.client";
+
 export default function Layout({ children }: Readonly<{ children: React.ReactNode }>) {
   return <RootLayout dynamic={{
     title: dynamicConfig.title || "Bird LG Extended",
@@ -22,6 +24,8 @@ export default function Layout({ children }: Readonly<{ children: React.ReactNod
     summaryDefaultViewProtocol: dynamicConfig.summaryDefaultViewProtocol || "bgp,ospf,isis,babel",
     /* AS4242423797 specific interface for better server selection. */
     baw_useLargeQueryInterface: dynamicConfig.baw_useLargeQueryInterface || false,
-    useUnstableServerIdentifier: dynamicConfig.useUnstableServerIdentifier || false
+    useUnstableServerIdentifier: dynamicConfig.useUnstableServerIdentifier || false,
+
+    tmp_serversClientView: SERVERS_CLIENT_VIEW
   }}>{children}</RootLayout>;
 };
