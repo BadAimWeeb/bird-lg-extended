@@ -5,6 +5,8 @@ import type { NextRequest } from 'next/server'
 import { EventEmitter } from 'events';
 import { SERVERS_CLIENT_VIEW } from '@/utils_server/servers';
 
+const USE_UNSTABLE_SERVER_IDENTIFIER = process.env.USE_SERVER_INDEX_AS_IDENTIFIER === "true";
+
 const cache: Map<string, {
     cachedOn: number,
     data: string,
@@ -23,7 +25,22 @@ setInterval(() => {
 
 export async function GET(request: NextRequest) {
     const searchParams = request.nextUrl.searchParams
-    const restrictServers = searchParams.get('servers')?.split(',').map(s => s.trim()) || SERVERS_CLIENT_VIEW;
+    const restrictServers = (USE_UNSTABLE_SERVER_IDENTIFIER ? 
+        (() => {
+            if (searchParams.has('servers')) {
+                const bi = BigInt(searchParams.get('servers')!);
+                const serverList: string[] = [];
+                SERVERS_CLIENT_VIEW.forEach((server, index) => {
+                    if ((bi & (BigInt(1) << BigInt(index))) !== BigInt(0)) {
+                        serverList.push(server);
+                    }
+                });
+                return serverList;
+            } else {
+                return null;
+            }
+        })() : 
+        searchParams.get('servers')?.split(',').map(s => s.trim())) || SERVERS_CLIENT_VIEW;
     const cmd = searchParams.get('cmd')?.trim();
     const type = searchParams.get('type')?.trim() || 'bird';
 

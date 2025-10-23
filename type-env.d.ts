@@ -12,5 +12,11 @@ declare namespace NodeJS {
         FALLBACK_WHOIS_SERVER?: string;
         WHOIS_FALLBACK_SPLIT_MODE?: string;
         SERVERS?: string;
+
+        /** Significantly reduce length of URL for large queries, at the cost of unstable URL if servers get changed. */
+        USE_SERVER_INDEX_AS_IDENTIFIER?: string;
+
+        /** AS4242423797-specific: Use a better structured query interface for large server count with geographic information. */
+        BAW_USE_LARGE_QUERY_INTERFACE?: string;
     }
 }

@@ -3,12 +3,14 @@
 import { ThemeProvider, createTheme } from '@mui/material/styles';
 import { Roboto, Roboto_Mono } from "next/font/google";
 import { Suspense, use, useCallback, useEffect, useState } from "react";
-import { AppBar, Box, Button, Container, Divider, FormControl, InputLabel, LinearProgress, MenuItem, OutlinedInput, Select, type SelectChangeEvent, TextField, Toolbar, Typography } from "@mui/material";
+import { AppBar, Box, Button, Container, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, Divider, FormControl, InputLabel, LinearProgress, MenuItem, OutlinedInput, Select, type SelectChangeEvent, TextField, Toolbar, Typography } from "@mui/material";
 import Link from 'next/link';
 import { getServersClientView } from '@/utils_server/servers_client_view';
 import { usePathname, useRouter } from 'next/navigation';
 import StartIcon from "@mui/icons-material/Start";
 import { DynamicEnvVariableProvider, useDynamicEnvVariable } from '@/components/DynamicEnvVariable';
+import { LargeQueryInterface } from '@/components/LargeQuery';
+import { ROUTES } from '../utils_client/availableURLRoute';
 
 const roboto = Roboto({
     variable: "--font-roboto",
@@ -21,29 +23,6 @@ const robotoMono = Roboto_Mono({
 });
 
 const ALL_SERVERS_VALUE = "BIRD_LG_EXTENDED_ALL_SERVERS";
-const ROUTES = {
-    "summary": "show protocols",
-    "detail": "show protocols all ...",
-    "route_from_protocol": "show route protocol ...",
-    "route_from_protocol_all": "show route protocol ... all",
-    "route_from_protocol_all_primary": "show route protocol ... all primary",
-    "route_filtered_from_protocol": "show route filtered protocol ...",
-    "route_filtered_from_protocol_all": "show route filtered protocol ... all",
-    "route_from_origin": "show route where bgp_path.last = ...",
-    "route_from_origin_all": "show route where bgp_path.last = ... all",
-    "route_from_origin_all_primary": "show route where bgp_path.last = ... all primary",
-    "route": "show route for ...",
-    "route_all": "show route for ... all",
-    "route_bgpmap": "show route for ... (bgpmap)",
-    "route_where": "show route where net ~ [ ... ]",
-    "route_where_all": "show route where net ~ [ ... ] all",
-    "route_where_bgpmap": "show route where net ~ [ ... ] (bgpmap)",
-    "route_generic": "show route ...",
-    "generic": "show ...",
-    "whois": "whois ...",
-    "traceroute": "traceroute ..."
-}
-
 export default function RootLayout({
     children,
     dynamic
@@ -55,6 +34,8 @@ export default function RootLayout({
         navbarBrand: string;
         ibgpRegex: string;
         summaryDefaultViewProtocol: string;
+        baw_useLargeQueryInterface: boolean;
+        useUnstableServerIdentifier: boolean;
     };
 }>) {
     const dynamicConfig = dynamic;
@@ -73,6 +54,7 @@ export default function RootLayout({
         }
     }));
 
+    const [showLargeQueryInterface, setShowLargeQueryInterface] = useState(false);
     const [queryValue, setQueryValue] = useState<string>("");
     const [queryType, setQueryType] = useState<string>("generic");
     const [servers, setServers] = useState<string[]>([]);
@@ -113,14 +95,21 @@ export default function RootLayout({
 
     const router = useRouter();
     const handleStartQuery = useCallback(() => {
-        const sText = (servers.includes(ALL_SERVERS_VALUE) ? availableServers : servers).join('+');
+        const s = servers.includes(ALL_SERVERS_VALUE) && !dynamic.baw_useLargeQueryInterface ? availableServers : servers.filter(x => x != ALL_SERVERS_VALUE);
+        const sText = dynamic.useUnstableServerIdentifier ? (
+            s.map(server => {
+                const index = availableServers.indexOf(server);
+                return index >= 0 ? BigInt(1) << BigInt(index) : BigInt(0);
+            })
+                .reduce((acc, curr) => acc | curr, BigInt(0)).toString()
+        ) : s.join("+");
 
         if (queryType === "whois") {
             router.push(`/whois/${encodeURIComponent(queryValue)}`);
         } else {
             router.push(`/${queryType}/${encodeURIComponent(sText)}/${encodeURIComponent(queryValue)}`);
         }
-    }, [queryType, queryValue, servers, router]);
+    }, [queryType, queryValue, servers, router, dynamic]);
 
     const handleChangeQueryType = useCallback((event: SelectChangeEvent<string>) => {
         setQueryType(event.target.value);
@@ -137,6 +126,14 @@ export default function RootLayout({
         }
     }, [handleStartQuery]);
 
+    const handleLargeQueryInterfaceOpen = useCallback(() => {
+        setShowLargeQueryInterface(true);
+    }, []);
+
+    const handleLargeQueryInterfaceRequestClose = useCallback(() => {
+        setShowLargeQueryInterface(false);
+    }, []);
+
     const pathname = usePathname();
     useEffect(() => {
         const splitPath = pathname.split('/');
@@ -151,14 +148,33 @@ export default function RootLayout({
             const serversInPath = splitPath[2];
 
             if (serversInPath) {
-                const servers = decodeURIComponent(serversInPath).split('+');
-                if (servers.length === availableServers.length && servers.every(server => availableServers.includes(server))) {
-                    setServers([ALL_SERVERS_VALUE].concat(availableServers));
+                if (dynamic.useUnstableServerIdentifier) {
+                    try {
+                        const bi = BigInt(serversInPath);
+                        const servers: string[] = [];
+
+                        availableServers.forEach((server, index) => {
+                            if ((bi & (BigInt(1) << BigInt(index))) !== BigInt(0)) {
+                                servers.push(server);
+                            }
+                        });
+
+                        if (servers.length === availableServers.length) {
+                            setServers((dynamic.baw_useLargeQueryInterface ? [] : [ALL_SERVERS_VALUE]).concat(availableServers));
+                        } else {
+                            setServers(servers);
+                        }
+                    } catch {}
                 } else {
-                    setServers(servers);
+                    const servers = decodeURIComponent(serversInPath).split('+');
+                    if (servers.length === availableServers.length && servers.every(server => availableServers.includes(server))) {
+                        setServers((dynamic.baw_useLargeQueryInterface ? [] : [ALL_SERVERS_VALUE]).concat(availableServers));
+                    } else {
+                        setServers(servers);
+                    }
                 }
             } else {
-                setServers([ALL_SERVERS_VALUE].concat(availableServers));
+                setServers((dynamic.baw_useLargeQueryInterface ? [] : [ALL_SERVERS_VALUE]).concat(availableServers));
             }
 
             const queryValue = splitPath[3];
@@ -168,11 +184,11 @@ export default function RootLayout({
                 setQueryValue("");
             }
         } else {
-            setServers([ALL_SERVERS_VALUE].concat(availableServers));
+            setServers((dynamic.baw_useLargeQueryInterface ? [] : [ALL_SERVERS_VALUE]).concat(availableServers));
             const queryValue = splitPath[2];
             setQueryValue(decodeURIComponent(queryValue || ""));
         }
-    }, [pathname, availableServers]);
+    }, [pathname, availableServers, dynamic]);
 
     return (
         <html lang="en">
@@ -188,57 +204,109 @@ export default function RootLayout({
                                         </Typography>
                                     </Link>
                                     <Box sx={{ flexGrow: 1 }} />
-                                    <Box sx={{ display: "flex", alignItems: "center", flexWrap: "wrap" }}>
-                                        <FormControl sx={{ minWidth: 150, maxWidth: 200, flexGrow: 1 }}>
-                                            <InputLabel id="multiserver-selector-label">Servers</InputLabel>
-                                            <Select
-                                                labelId="multiserver-selector-label"
-                                                id="multiserver-selector"
-                                                multiple
-                                                value={servers}
-                                                onChange={handleChangeServerSelect}
-                                                input={<OutlinedInput label="Servers" size="small" />}
-                                                renderValue={(selected) => (
-                                                    selected.includes(ALL_SERVERS_VALUE) ? "All Servers" : selected.sort().join(', ')
-                                                )}
-                                                sx={{ fontSize: 14 }}
+                                    {dynamicConfig.baw_useLargeQueryInterface ? (
+                                        <>
+                                            <Button
+                                                size="small"
+                                                sx={{ maxWidth: 150, fontSize: 14, flexGrow: 100 }}
+                                                onClick={handleLargeQueryInterfaceOpen}
+                                                variant='outlined'
                                             >
-                                                <MenuItem value={ALL_SERVERS_VALUE}>
-                                                    All Servers
-                                                </MenuItem>
-                                                <Divider />
-                                                {availableServers.map((name) => (
-                                                    <MenuItem
-                                                        key={name}
-                                                        value={name}
-                                                    >
-                                                        {name}
+                                                Query...
+                                            </Button>
+                                            <Dialog
+                                                open={showLargeQueryInterface}
+                                                onClose={handleLargeQueryInterfaceRequestClose}
+                                                slotProps={{
+                                                    paper: {
+                                                        sx: {
+                                                            maxWidth: "min(90vw, 1200px)",
+                                                            width: "100%"
+                                                        }
+                                                    }
+                                                }}
+                                            >
+                                                <DialogTitle>
+                                                    Query
+                                                </DialogTitle>
+                                                <DialogContent>
+                                                    <LargeQueryInterface
+                                                        availableServers={availableServers}
+                                                        currentServerSelection={servers}
+                                                        onServerSelectionChange={setServers}
+                                                        queryType={queryType}
+                                                        onQueryTypeChange={setQueryType}
+                                                        queryValue={queryValue}
+                                                        onQueryValueChange={setQueryValue}
+                                                        callSubmit={() => {
+                                                            handleStartQuery();
+                                                            handleLargeQueryInterfaceRequestClose();
+                                                        }}
+                                                    />
+                                                </DialogContent>
+                                                <DialogActions>
+                                                    <Button onClick={handleLargeQueryInterfaceRequestClose} color="error">Close</Button>
+                                                    <Button onClick={() => {
+                                                        handleStartQuery();
+                                                        handleLargeQueryInterfaceRequestClose();
+                                                    }} color="warning">
+                                                        Query
+                                                    </Button>
+                                                </DialogActions>
+                                            </Dialog>
+                                        </>
+                                    ) : (
+                                        <Box sx={{ display: "flex", alignItems: "center", flexWrap: "wrap" }}>
+                                            <FormControl sx={{ minWidth: 150, maxWidth: 200, flexGrow: 1 }}>
+                                                <InputLabel id="multiserver-selector-label">Servers</InputLabel>
+                                                <Select
+                                                    labelId="multiserver-selector-label"
+                                                    id="multiserver-selector"
+                                                    multiple
+                                                    value={servers}
+                                                    onChange={handleChangeServerSelect}
+                                                    input={<OutlinedInput label="Servers" size="small" />}
+                                                    renderValue={(selected) => (
+                                                        selected.includes(ALL_SERVERS_VALUE) ? "All Servers" : selected.sort().join(', ')
+                                                    )}
+                                                    sx={{ fontSize: 14 }}
+                                                >
+                                                    <MenuItem value={ALL_SERVERS_VALUE}>
+                                                        All Servers
+                                                    </MenuItem>
+                                                    <Divider />
+                                                    {availableServers.map((name) => (
+                                                        <MenuItem
+                                                            key={name}
+                                                            value={name}
+                                                        >
+                                                            {name}
+                                                        </MenuItem>
+                                                    ))}
+                                                </Select>
+                                            </FormControl>
+                                            <Select
+                                                value={queryType}
+                                                onChange={handleChangeQueryType}
+                                                size="small"
+                                                sx={{ width: 300, fontSize: 14 }}
+                                            >
+                                                {Object.entries(ROUTES).map(([key, value]) => (
+                                                    <MenuItem key={key} value={key}>
+                                                        {value}
                                                     </MenuItem>
                                                 ))}
                                             </Select>
-                                        </FormControl>
-                                        <Select
-                                            value={queryType}
-                                            onChange={handleChangeQueryType}
-                                            size="small"
-                                            sx={{ width: 300, fontSize: 14 }}
-                                        >
-                                            {Object.entries(ROUTES).map(([key, value]) => (
-                                                <MenuItem key={key} value={key}>
-                                                    {value}
-                                                </MenuItem>
-                                            ))}
-                                        </Select>
-                                        <TextField
-                                            value={queryValue}
-                                            onChange={handleChangeQueryValue}
-                                            onKeyUp={handleEnterQueryValue}
-                                            size="small"
-                                            sx={{ maxWidth: 300, fontSize: 14, flexGrow: 100 }}
-                                            placeholder="Target..."
-                                        />
-                                        <Button color="success" variant="contained" onClick={handleStartQuery} sx={{ height: 40 }}><StartIcon /></Button>
-                                    </Box>
+                                            <TextField
+                                                value={queryValue}
+                                                onChange={handleChangeQueryValue}
+                                                onKeyUp={handleEnterQueryValue}
+                                                size="small"
+                                                sx={{ maxWidth: 300, fontSize: 14, flexGrow: 100 }}
+                                                placeholder="Target..."
+                                            />
+                                            <Button color="success" variant="contained" onClick={handleStartQuery} sx={{ height: 40 }}><StartIcon /></Button>
+                                        </Box>)}
                                 </Toolbar>
                             </AppBar>
 

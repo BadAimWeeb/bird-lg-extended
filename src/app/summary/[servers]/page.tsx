@@ -72,9 +72,7 @@ export default function Overview({
     const [selectedProtocols, setSelectedProtocols] = useState<Set<string>>(() => new Set(DEFAULT_VIEW_PROTOCOLS));
     const availableProtocolTypes = useMemo(() => {
         const protocols = new Set<string>();
-        console.log(summary);
         Object.values(summary).forEach(([_, data]) => {
-            console.log(_, data)
             data?.forEach(entry => {
                 if (entry.proto) {
                     protocols.add(entry.proto.toLocaleLowerCase());

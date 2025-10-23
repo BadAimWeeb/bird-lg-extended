@@ -19,6 +19,9 @@ export default function Layout({ children }: Readonly<{ children: React.ReactNod
     description: dynamicConfig.description || "looking glass & network tools using bird-lg",
     navbarBrand: dynamicConfig.navbarBrand || "Bird LG Extended",
     ibgpRegex: dynamicConfig.ibgpRegex || "^ibgp_.*",
-    summaryDefaultViewProtocol: dynamicConfig.summaryDefaultViewProtocol || "bgp,ospf,isis,babel"
+    summaryDefaultViewProtocol: dynamicConfig.summaryDefaultViewProtocol || "bgp,ospf,isis,babel",
+    /* AS4242423797 specific interface for better server selection. */
+    baw_useLargeQueryInterface: dynamicConfig.baw_useLargeQueryInterface || false,
+    useUnstableServerIdentifier: dynamicConfig.useUnstableServerIdentifier || false
   }}>{children}</RootLayout>;
 };
