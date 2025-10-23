@@ -8,6 +8,7 @@ import ExpandLessIcon from "@mui/icons-material/ExpandLess";
 import { Collapsable } from "@/components/Collapsable";
 import Link from "next/link";
 import { useDynamicEnvVariable } from "@/components/DynamicEnvVariable";
+import { getServersClientView } from "@/utils_server/servers_client_view";
 
 const NAME_MAPPINGLIST: Record<string, string> = {
     "bgp": "BGP",
@@ -31,6 +32,8 @@ const NAME_MAPPINGLIST: Record<string, string> = {
     "ibgp": "iBGP"
 };
 
+const AVAILABLE_SERVER_PROMISE = getServersClientView();
+
 export default function Overview({
     params
 }: {
@@ -42,7 +45,27 @@ export default function Overview({
     const DEFAULT_VIEW_PROTOCOLS = useMemo(() => DEFAULT_VIEW_PROTOCOL_STRING.split(",").map(proto => proto.trim()), [DEFAULT_VIEW_PROTOCOL_STRING]);
 
     const servers = use(params);
-    const serversArray = useMemo(() => servers?.servers ? decodeURIComponent(servers.servers).split('+').map(s => s.trim()) : [], [servers]);
+    const availableServers = use(AVAILABLE_SERVER_PROMISE);
+    const serversArray = useMemo(() => servers?.servers ? (
+        dynamicEnvVariable.useUnstableServerIdentifier ?
+        (() => {
+            try {
+                const bi = BigInt(servers.servers);
+                const serverList: string[] = [];
+
+                availableServers.forEach((server, index) => {
+                    if ((bi & (BigInt(1) << BigInt(index))) !== BigInt(0)) {
+                        serverList.push(server);
+                    }
+                });
+
+                return serverList;
+            } catch {
+                return [];
+            }
+        })() :    
+        decodeURIComponent(servers.servers).split('+').map(s => s.trim())
+    ) : [], [servers, dynamicEnvVariable, availableServers]);
     const theme = useTheme();
 
     const [summary, setSummary] = useState<Record<string, [lastUpdated: number, data?: {
@@ -56,7 +79,7 @@ export default function Overview({
 
     useEffect(() => {
         function fetchOverview() {
-            fetch("/api/summary" + (serversArray.length > 0 ? `?servers=${encodeURIComponent(serversArray.join(','))}` : ""))
+            fetch("/api/summary" + (serversArray.length > 0 ? `?servers=${dynamicEnvVariable.useUnstableServerIdentifier ? (servers?.servers || "") : encodeURIComponent(serversArray.join(','))}` : ""))
                 .then((response) => response.json())
                 .then((data) => {
                     setSummary(data);
@@ -67,7 +90,7 @@ export default function Overview({
         const interval = setInterval(fetchOverview, 5000); // Refresh every 5 seconds
 
         return () => clearInterval(interval);
-    }, [serversArray]);
+    }, [serversArray, dynamicEnvVariable]);
 
     const [selectedProtocols, setSelectedProtocols] = useState<Set<string>>(() => new Set(DEFAULT_VIEW_PROTOCOLS));
     const availableProtocolTypes = useMemo(() => {
@@ -190,7 +213,7 @@ export default function Overview({
 
         {Object.entries(summary).filter(([server]) => serversArray.length ? serversArray.includes(server) : true).sort(([a], [b]) => a.localeCompare(b)).map(([server, [lastUpdated, data]]) => (
             <Box key={server} sx={{ pt: 1, pb: 1 }}>
-                <Link href={`/summary/${encodeURIComponent(server)}`} style={{ textDecoration: 'none', color: 'inherit' }}>
+                <Link href={`/summary/${dynamicEnvVariable.useUnstableServerIdentifier ? (BigInt(1) << BigInt(availableServers.indexOf(server))).toString() : encodeURIComponent(server)}`} style={{ textDecoration: 'none', color: 'inherit' }}>
                     <Tooltip title={`Last updated: ${lastUpdated > 0 ? new Date(lastUpdated).toLocaleString() + (Date.now() - lastUpdated >= 15000 ? " (too long since last update ⚠️)" : "") : "Never ⚠️"}`}>
                         <Typography variant="h6" component="span" color={Date.now() - lastUpdated < 15000 ? "text.primary" : "error.main"} sx={{ fontWeight: 'bold', cursor: 'pointer' }}>
                             {server}
@@ -224,7 +247,7 @@ export default function Overview({
                                                 }}
                                             >
                                                 <TableCell component="th" scope="row">
-                                                    <Link href={`/detail/${encodeURIComponent(server)}/${encodeURIComponent(row.name)}`}>{row.name}</Link>
+                                                    <Link href={`/detail/${dynamicEnvVariable.useUnstableServerIdentifier ? (BigInt(1) << BigInt(availableServers.indexOf(server))).toString() : encodeURIComponent(server)}/${encodeURIComponent(row.name)}`}>{row.name}</Link>
                                                 </TableCell>
                                                 <TableCell align="right">{row.proto}</TableCell>
                                                 <TableCell align="right">{row.table}</TableCell>
