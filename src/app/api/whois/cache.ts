@@ -1,10 +1,11 @@
-import whois from "whois";
+import { lookup } from "whois";
+import type { WhoisOptions, WhoisResult } from "whois";
 import { isIPv4, isIPv6 } from "net";
 import { Address4, Address6 } from "ip-address";
 
-function lookupAsync<T extends boolean = false>(addr: string, options?: whois.WhoisOptions<T>): Promise<whois.WhoisResult<T>> {
-    return new Promise<whois.WhoisResult<T>>((resolve, reject) => {
-        whois.lookup(addr, options || {}, (err, data) => {
+function lookupAsync<T extends boolean = false>(addr: string, options?: WhoisOptions<T>): Promise<WhoisResult<T>> {
+    return new Promise<WhoisResult<T>>((resolve, reject) => {
+        lookup(addr, options || {}, (err, data) => {
             if (err) {
                 reject(err);
             } else {
